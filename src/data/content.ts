@@ -94,7 +94,12 @@ export type Testimonial = {
   car: string;
   rating: number;
   quote: string;
-  photo: PhotoKey;
+  /**
+   * The vehicle the review is about — never a portrait of the reviewer.
+   * Site-wide imagery policy is cars only, so the testimonial thumbnail shows
+   * the model that was bought (the same shot that fronts its listing in CARS).
+   */
+  carPhoto: PhotoKey;
   location: string;
 };
 
@@ -105,7 +110,7 @@ export const TESTIMONIALS: Testimonial[] = [
     rating: 5,
     quote:
       "I had been burnt by a Ngong Road dealer before, so I came to Mombasa Road with my own mechanic. Savanna handed over the inspection report before I even asked. Three months in, zero surprises.",
-    photo: "personSuitStairs",
+    carPhoto: "extBlackSuvCity",
     location: "Nairobi",
   },
   {
@@ -114,7 +119,7 @@ export const TESTIMONIALS: Testimonial[] = [
     rating: 5,
     quote:
       "My first car ever. They explained the financing in plain language, showed me the total cost over four years and never pushed me into a bigger loan. The Demio has been perfect for town.",
-    photo: "personOfficeWoman",
+    carPhoto: "extRedRain",
     location: "Westlands",
   },
   {
@@ -123,7 +128,7 @@ export const TESTIMONIALS: Testimonial[] = [
     rating: 5,
     quote:
       "We bought four Hilux units for our Eldoret depot. Fleet pricing was honest, the logbooks came through in two weeks and their service centre handles the schedule for all of them.",
-    photo: "personBench",
+    carPhoto: "extWhitePickup",
     location: "Eldoret",
   },
   {
@@ -132,7 +137,7 @@ export const TESTIMONIALS: Testimonial[] = [
     rating: 4,
     quote:
       "The hybrid battery report is what sold me. They also took my old Fielder on trade-in at a fair number — no haggling games, just a valuation sheet I could read.",
-    photo: "personBlazerWoman",
+    carPhoto: "extBlackSuvUrban",
     location: "Karen",
   },
   {
@@ -141,7 +146,7 @@ export const TESTIMONIALS: Testimonial[] = [
     rating: 5,
     quote:
       "We test drove on a Saturday morning, the whole family came. They let us take it up Limuru Road properly rather than around the block. Bought it the following week.",
-    photo: "coupleHandshake",
+    carPhoto: "extBlackSuvGreen",
     location: "Kiambu",
   },
 ];
@@ -177,7 +182,7 @@ export const POSTS: BlogPost[] = [
     category: "Maintenance",
     date: "2026-08-30",
     readMinutes: 6,
-    photo: "serviceMechanic",
+    photo: "intBrakeRim",
     author: "Savanna Motors Service Centre",
   },
   {

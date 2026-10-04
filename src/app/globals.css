@@ -1600,15 +1600,21 @@ button {
   pointer-events: auto;
 }
 
-.sm-testimonial__avatar {
-  width: 96px;
-  height: 96px;
-  border-radius: var(--sm-radius-circle);
+/* Cars only — this slot holds the vehicle that was bought, never a portrait,
+   so it is a landscape plate rather than a round avatar. `position: relative`
+   is required: next/image `fill` is absolutely positioned. */
+.sm-testimonial__vehicle {
+  position: relative;
+  width: 180px;
+  aspect-ratio: 4 / 3;
   overflow: hidden;
   flex: none;
+  background: var(--sm-light);
+  border: var(--sm-border-width) solid var(--sm-border);
+  border-radius: var(--sm-radius);
 }
 
-.sm-testimonial__avatar img {
+.sm-testimonial__vehicle img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -2282,6 +2288,12 @@ button {
     padding: var(--sm-space-4);
     text-align: center;
     justify-items: center;
+  }
+
+  .sm-testimonial__vehicle {
+    width: 100%;
+    max-width: 320px;
+    aspect-ratio: 16 / 9;
   }
 
   .sm-footer__grid {
