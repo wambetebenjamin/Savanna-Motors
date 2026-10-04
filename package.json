@@ -18,7 +18,7 @@
     "zustand": "4.5.5",
     "zod": "3.23.8",
     "gray-matter": "4.0.3",
-    "next-mdx-remote": "5.0.0"
+    "next-mdx-remote": "6.0.0"
   },
   "devDependencies": {
     "@types/node": "20.16.11",
