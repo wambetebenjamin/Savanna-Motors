@@ -1,0 +1,31 @@
+{
+  "name": "savanna-motors",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next": "14.2.15",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "lucide-react": "0.453.0",
+    "three": "0.169.0",
+    "zustand": "4.5.5",
+    "zod": "3.23.8",
+    "gray-matter": "4.0.3",
+    "next-mdx-remote": "5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "20.16.11",
+    "@types/react": "18.3.11",
+    "@types/react-dom": "18.3.0",
+    "@types/three": "0.169.0",
+    "typescript": "5.6.3",
+    "sharp": "0.33.5"
+  }
+}
