@@ -6,7 +6,7 @@ import * as THREE from "three";
  * bloom), in the design-source primary colour at 0.2 opacity.
  */
 
-export type CarShape = "suv" | "sedan" | "pickup";
+export type CarShape = "suv" | "sedan" | "pickup" | "coupe" | "hatchback";
 
 const PROFILES: Record<CarShape, [number, number][]> = {
   // x (length), y (height) — drawn from the rear bumper forward
@@ -46,12 +46,55 @@ const PROFILES: Record<CarShape, [number, number][]> = {
     [2.4, 0.26],
     [2.35, 0.0],
   ],
+  coupe: [
+    [-2.25, 0.0],
+    [-2.3, 0.38],
+    [-1.95, 0.5],
+    [-0.95, 0.6],
+    [-0.2, 0.82],
+    [0.6, 0.78],
+    [1.15, 0.5],
+    [2.0, 0.42],
+    [2.3, 0.15],
+    [2.25, 0.0],
+  ],
+  hatchback: [
+    [-1.95, 0.0],
+    [-2.0, 0.5],
+    [-1.75, 0.66],
+    [-1.1, 1.02],
+    [-0.15, 1.08],
+    [0.7, 1.0],
+    [1.15, 0.62],
+    [1.8, 0.5],
+    [2.0, 0.2],
+    [1.95, 0.0],
+  ],
 };
 
 const WHEELBASE: Record<CarShape, [number, number]> = {
   suv: [-1.35, 1.3],
   sedan: [-1.5, 1.42],
   pickup: [-1.6, 1.45],
+  coupe: [-1.45, 1.5],
+  hatchback: [-1.25, 1.2],
+};
+
+// greenhouse band: [width, height, centreX, centreY] — kept inside the roofline
+const CABIN: Record<CarShape, [number, number, number, number]> = {
+  suv: [2.0, 0.36, -0.2, 0.94],
+  sedan: [1.9, 0.34, -0.25, 0.84],
+  pickup: [1.4, 0.36, 0.05, 0.92],
+  coupe: [1.6, 0.28, -0.3, 0.63],
+  hatchback: [1.7, 0.34, -0.4, 0.86],
+};
+
+const WHEEL_RADIUS: Record<CarShape, number> = {
+  suv: 0.5,
+  sedan: 0.42,
+  pickup: 0.5,
+  coupe: 0.4,
+  hatchback: 0.42,
 };
 
 function wireMaterial(color: THREE.ColorRepresentation, opacity: number) {
@@ -66,14 +109,19 @@ function wireMaterial(color: THREE.ColorRepresentation, opacity: number) {
 function wheel(radius: number, width: number, material: THREE.Material) {
   const geometry = new THREE.CylinderGeometry(radius, radius, width, 10, 1, true);
   geometry.rotateX(Math.PI / 2);
-  return new THREE.LineSegments(new THREE.EdgesGeometry(geometry, 1), material);
+  const mesh = new THREE.LineSegments(new THREE.EdgesGeometry(geometry, 1), material);
+  mesh.userData.kind = "wheel";
+  mesh.userData.radius = radius;
+  return mesh;
 }
 
 export function buildCar(
   shape: CarShape,
   color: THREE.ColorRepresentation,
   opacity = 0.2,
+  opts: { includeRing?: boolean } = {},
 ): THREE.Group {
+  const { includeRing = true } = opts;
   const group = new THREE.Group();
   const material = wireMaterial(color, opacity);
 
@@ -96,16 +144,13 @@ export function buildCar(
   group.add(new THREE.LineSegments(new THREE.EdgesGeometry(body, 22), material));
 
   // --- greenhouse / cabin band, keeps the silhouette readable while rotating
-  const cabin = new THREE.BoxGeometry(
-    shape === "pickup" ? 1.5 : 2.2,
-    0.42,
-    1.58,
-  );
-  cabin.translate(shape === "pickup" ? 0.1 : -0.15, 1.08, 0);
+  const [cw, ch, cx, cy] = CABIN[shape];
+  const cabin = new THREE.BoxGeometry(cw, ch, 1.58);
+  cabin.translate(cx, cy, 0);
   group.add(new THREE.LineSegments(new THREE.EdgesGeometry(cabin), material));
 
   // --- wheels
-  const radius = shape === "sedan" ? 0.42 : 0.5;
+  const radius = WHEEL_RADIUS[shape];
   const [front, rear] = WHEELBASE[shape];
   [front, rear].forEach((x) => {
     [-0.92, 0.92].forEach((z) => {
@@ -115,21 +160,19 @@ export function buildCar(
     });
   });
 
-  // --- ground reference line (a single flat ring, no decorative shapes)
-  const ring = new THREE.RingGeometry(2.6, 2.62, 48);
-  ring.rotateX(-Math.PI / 2);
-  const ringMesh = new THREE.LineSegments(
-    new THREE.EdgesGeometry(ring, 1),
-    wireMaterial(color, opacity * 0.6),
-  );
-  group.add(ringMesh);
+  // --- ground reference line (a single flat ring, no decorative shapes).
+  // Skipped for cars that drive across the scene — only makes sense parked.
+  if (includeRing) {
+    const ring = new THREE.RingGeometry(2.6, 2.62, 48);
+    ring.rotateX(-Math.PI / 2);
+    const ringMesh = new THREE.LineSegments(
+      new THREE.EdgesGeometry(ring, 1),
+      wireMaterial(color, opacity * 0.6),
+    );
+    group.add(ringMesh);
+  }
 
   group.rotation.y = Math.PI * 0.12;
   return group;
 }
 
-export const CAR_SEQUENCE: { shape: CarShape; label: string }[] = [
-  { shape: "suv", label: "Land Cruiser Prado" },
-  { shape: "sedan", label: "Mercedes-Benz C200" },
-  { shape: "pickup", label: "Toyota Hilux" },
-];

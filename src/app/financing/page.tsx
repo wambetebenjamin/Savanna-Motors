@@ -44,7 +44,7 @@ export default function FinancingPage() {
         title="Finance your next car"
         lead={`Asset finance from ${SITE.paymentPartners.length} partners, indicative rates from ${SITE.financeRateDefault}% per annum on a reducing balance.`}
         breadcrumb={[{ label: "Home", href: "/" }, { label: "Financing" }]}
-        photo="coupleHandshake"
+        photo="extBlackSuvCity"
       />
 
       <section className="sm-section">

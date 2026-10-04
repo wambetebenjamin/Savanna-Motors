@@ -188,7 +188,7 @@ export const POSTS: BlogPost[] = [
     category: "Financing",
     date: "2026-08-12",
     readMinutes: 8,
-    photo: "coupleDealership",
+    photo: "intLuxuryDash",
     author: "Savanna Motors Finance Desk",
   },
 ];
