@@ -57,7 +57,7 @@ export const CARS: Car[] = [
     drive: "4WD",
     seats: 7,
     registration: "KDJ 441X",
-    photos: ["extBlackJeepStreet", "intLuxuryDash", "intWheelRim", "showroomRow"],
+    photos: ["extBlackJeepStreet", "intLuxuryDash", "showroomRow"],
     has360: true,
     featured: true,
     highlights: [
@@ -87,7 +87,7 @@ export const CARS: Car[] = [
     drive: "2WD",
     seats: 5,
     registration: "KDH 882T",
-    photos: ["extBlackSuvCity", "intWheelDash", "intBrakeRim", "showroomRow"],
+    photos: ["extBlackSuvCity", "intWheelDash", "showroomRow"],
     has360: true,
     featured: true,
     highlights: [
@@ -117,7 +117,7 @@ export const CARS: Car[] = [
     drive: "AWD",
     seats: 5,
     registration: "KDK 119B",
-    photos: ["extBlackSuvNight", "intLitDash", "intWheelRim", "showroomRow"],
+    photos: ["extBlackSuvNight", "intLitDash", "showroomRow"],
     has360: false,
     featured: true,
     highlights: [
@@ -147,7 +147,7 @@ export const CARS: Car[] = [
     drive: "AWD",
     seats: 5,
     registration: "KCX 764M",
-    photos: ["extBlackSuvGreen", "intCabin", "intBrakeRim", "showroomRow"],
+    photos: ["extBlackSuvGreen", "intCabin", "showroomRow"],
     has360: false,
     featured: true,
     highlights: [
@@ -177,7 +177,7 @@ export const CARS: Car[] = [
     drive: "2WD",
     seats: 5,
     registration: "KCY 203P",
-    photos: ["extBlackSuvUrban", "intCloseDash", "intWheelRim", "showroomRow"],
+    photos: ["extBlackSuvUrban", "intLuxuryDash", "showroomRow"],
     has360: false,
     featured: false,
     highlights: [
@@ -207,7 +207,7 @@ export const CARS: Car[] = [
     drive: "4WD",
     seats: 5,
     registration: "Pending registration",
-    photos: ["extWhitePickup", "intLuxuryDash", "intBrakeRim", "showroomRow"],
+    photos: ["extWhitePickup", "intCloseDash", "showroomRow"],
     has360: true,
     featured: true,
     highlights: [
@@ -237,7 +237,7 @@ export const CARS: Car[] = [
     drive: "4WD",
     seats: 5,
     registration: "KDE 557J",
-    photos: ["extWhiteTruckLot", "intCabin", "intWheelRim", "showroomRow"],
+    photos: ["extWhiteTruckLot", "intWheelDash", "showroomRow"],
     has360: false,
     featured: false,
     highlights: [
@@ -267,7 +267,7 @@ export const CARS: Car[] = [
     drive: "4WD",
     seats: 5,
     registration: "KDF 902R",
-    photos: ["extPickupDunes", "intLitDash", "intBrakeRim", "showroomRow"],
+    photos: ["extPickupDunes", "intLitDash", "showroomRow"],
     has360: false,
     featured: false,
     highlights: [
@@ -297,7 +297,7 @@ export const CARS: Car[] = [
     drive: "4WD",
     seats: 7,
     registration: "KCN 318V",
-    photos: ["extOffroad4x4", "intLuxuryDash", "intWheelRim", "showroomRow"],
+    photos: ["extOffroad4x4", "intCabin", "showroomRow"],
     has360: true,
     featured: false,
     highlights: [
@@ -327,7 +327,7 @@ export const CARS: Car[] = [
     drive: "RWD",
     seats: 5,
     registration: "KDC 775C",
-    photos: ["extSilverMerc", "intLuxuryDash", "intBrakeRim", "showroomRow"],
+    photos: ["extSilverMerc", "intLuxuryDash", "showroomRow"],
     has360: true,
     featured: true,
     highlights: [
@@ -357,7 +357,7 @@ export const CARS: Car[] = [
     drive: "2WD",
     seats: 5,
     registration: "KDB 640A",
-    photos: ["extSilverSedan", "intWheelDash", "intWheelRim", "showroomRow"],
+    photos: ["extSilverSedan", "intWheelDash", "showroomRow"],
     has360: false,
     featured: true,
     highlights: [
@@ -387,7 +387,7 @@ export const CARS: Car[] = [
     drive: "2WD",
     seats: 5,
     registration: "KCZ 509D",
-    photos: ["extSilverPergola", "intCloseDash", "intBrakeRim", "showroomRow"],
+    photos: ["extSilverPergola", "intLitDash", "showroomRow"],
     has360: false,
     featured: false,
     highlights: [
@@ -417,7 +417,7 @@ export const CARS: Car[] = [
     drive: "2WD",
     seats: 5,
     registration: "KDD 201H",
-    photos: ["extSilverUrban", "intCabin", "intWheelRim", "showroomRow"],
+    photos: ["extSilverUrban", "intCabin", "showroomRow"],
     has360: false,
     featured: false,
     highlights: [
@@ -447,7 +447,7 @@ export const CARS: Car[] = [
     drive: "2WD",
     seats: 5,
     registration: "KCW 833G",
-    photos: ["extRedCobble", "intLitDash", "intBrakeRim", "showroomRow"],
+    photos: ["extRedCobble", "intCloseDash", "showroomRow"],
     has360: false,
     featured: false,
     highlights: [
@@ -477,7 +477,7 @@ export const CARS: Car[] = [
     drive: "2WD",
     seats: 5,
     registration: "KDA 476N",
-    photos: ["extRedRain", "intWheelDash", "intWheelRim", "showroomRow"],
+    photos: ["extRedRain", "intLitDash", "showroomRow"],
     has360: false,
     featured: true,
     highlights: [
@@ -507,7 +507,7 @@ export const CARS: Car[] = [
     drive: "2WD",
     seats: 5,
     registration: "Pending registration",
-    photos: ["extRedUrban", "intLitDash", "intBrakeRim", "showroomRow"],
+    photos: ["extRedUrban", "intCabin", "showroomRow"],
     has360: true,
     featured: true,
     highlights: [
@@ -537,7 +537,7 @@ export const CARS: Car[] = [
     drive: "2WD",
     seats: 5,
     registration: "KDB 118F",
-    photos: ["extGreyCompact", "intCloseDash", "intWheelRim", "showroomRow"],
+    photos: ["extGreyCompact", "intCloseDash", "showroomRow"],
     has360: false,
     featured: false,
     highlights: [
@@ -567,7 +567,7 @@ export const CARS: Car[] = [
     drive: "2WD",
     seats: 5,
     registration: "KDC 942L",
-    photos: ["extGreyStreet", "intCabin", "intBrakeRim", "showroomRow"],
+    photos: ["extGreyStreet", "intLuxuryDash", "showroomRow"],
     has360: false,
     featured: false,
     highlights: [

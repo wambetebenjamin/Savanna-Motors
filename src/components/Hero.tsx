@@ -92,6 +92,7 @@ export function Hero() {
               key={s.name}
               className="sm-hero__slide"
               style={{ opacity: i === slide ? 1 : 0 }}
+              data-active={i === slide}
               aria-hidden={i !== slide}
             >
               <Photo name={s.name} alt={s.alt} sizes="100vw" priority={i === 0} />
@@ -139,7 +140,8 @@ export function Hero() {
               </div>
             </div>
 
-            {/* corner showcase: rotating wire-frame model, switching occasionally */}
+            {/* corner showcase: a shaded car turning on its axis, handing over to the
+                next model every few seconds */}
             <HeroCarTurntable />
           </div>
 

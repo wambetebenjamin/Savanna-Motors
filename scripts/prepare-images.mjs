@@ -175,8 +175,12 @@ anywhere on it. That covers the hero slides, featured inventory, the trade-in se
 customer testimonials (each thumbnail is the model that was bought, not the buyer) and the
 blog cards. \`/about\` follows the same rule.
 
-The \`person-*\` and \`couple-*\` files below are retained in the library but are not referenced
-by any page; \`service-mechanic-*\` is used only on \`/service\`.
+Listings and editorial use whole-vehicle photography too — the \`int-wheel-rim-*\` and
+\`int-brake-rim-*\` macro crops are no longer attached to any car, because a single wheel
+repeated across eighteen listings tells a buyer nothing.
+
+The \`person-*\`, \`couple-*\` and both wheel macro files below are retained in the library but
+are not referenced by any page; \`service-mechanic-*\` is used only on \`/service\`.
 
 ## Licences
 

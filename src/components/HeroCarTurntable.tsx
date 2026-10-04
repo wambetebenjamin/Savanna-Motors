@@ -2,33 +2,43 @@
 
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
-import { buildCar, type CarShape } from "@/lib/three/carMeshes";
+import { buildCar, setCarOpacity, type CarModel, type CarShape } from "@/lib/three/carMeshes";
+import {
+  addLighting,
+  clamp01,
+  createEnvironment,
+  createRenderer,
+  disposeScene,
+  easeInCubic,
+  easeOutBack,
+  easeOutExpo,
+} from "@/lib/three/stage";
 
-const WIRE_COLOR = "#D81324"; // --sm-primary, taken from the design source
-const WIRE_OPACITY = 0.26; // slightly brighter than the background traffic
-const HOLD_MS = 6500; // how long a model shows before the next one drives in
-const SWIPE_MS = 1100;
-const OFFSCREEN_X = 6.5;
+const HOLD_MS = 5200; // how long a car holds centre stage before handing over
+const SWAP_MS = 1900; // length of the exit + entrance choreography
+const SPIN = 0.0052; // radians per frame on the turntable
 
-const easeOutQuint = (t: number) => 1 - Math.pow(1 - t, 5);
+/** Exit and entrance overlap: the new car starts arriving 34% into the swap. */
+const ENTER_AT = 0.34;
 
-/**
- * Corner showcase: one wire-frame car turning slowly on its axis, switching to
- * a new model every few seconds — the next silhouette drives in and takes over
- * the rotation. Labels come from real inventory lines.
- */
-const MODELS: { shape: CarShape; label: string }[] = [
-  { shape: "suv", label: "Land Cruiser Prado TX" },
-  { shape: "pickup", label: "Hilux Double Cab" },
-  { shape: "sedan", label: "Mercedes-Benz C200 AMG Line" },
-  { shape: "hatchback", label: "Volkswagen Golf TSI" },
-  { shape: "coupe", label: "Mazda 6 Skyactiv" },
+/** Showcase models — shape, bodywork colour and the inventory line it stands for. */
+const MODELS: { shape: CarShape; color: string; label: string }[] = [
+  { shape: "suv", color: "#1d2430", label: "Land Cruiser Prado TX" },
+  { shape: "pickup", color: "#e9edf2", label: "Hilux Double Cab" },
+  { shape: "sedan", color: "#aeb6c2", label: "Mercedes-Benz C200 AMG Line" },
+  { shape: "hatchback", color: "#c0111f", label: "Volkswagen Golf TSI" },
+  { shape: "coupe", color: "#101b33", label: "Mazda 6 Skyactiv" },
 ];
 
 /**
- * Desktop only (hidden under 1025px in CSS), DPR capped at 1.5, and the loop
- * pauses when the showcase scrolls out of view or the tab hides. With
- * reduced-motion the models still cycle but without rotation or swipes.
+ * Corner showcase: one fully shaded car turning slowly on its axis. Every few
+ * seconds the current car accelerates away to the left — lifting, shrinking
+ * and fading — while the next sweeps in from the right, settling into place
+ * with a slight overshoot as the key light sweeps across its flank.
+ *
+ * Desktop only (hidden under 1025px in CSS), DPR capped, and the loop pauses
+ * when the showcase scrolls out of view or the tab hides. Under reduced motion
+ * the models still cycle, but they cut rather than fly.
  */
 export function HeroCarTurntable() {
   const mountRef = useRef<HTMLDivElement | null>(null);
@@ -41,62 +51,48 @@ export function HeroCarTurntable() {
 
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    let renderer: THREE.WebGLRenderer;
-    try {
-      renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    } catch {
-      return;
-    }
-
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
-    renderer.setSize(mount.clientWidth, mount.clientHeight, false);
-    mount.appendChild(renderer.domElement);
+    const renderer = createRenderer(mount, 1.75); // small canvas, can afford the pixels
+    if (!renderer) return;
 
     const scene = new THREE.Scene();
+    const environment = createEnvironment(renderer);
+    scene.environment = environment.texture;
+
+    const { key } = addLighting(scene);
+    const keyHome = key.position.clone();
+
     const camera = new THREE.PerspectiveCamera(
-      34,
+      33,
       Math.max(mount.clientWidth / Math.max(mount.clientHeight, 1), 0.1),
       0.1,
       100,
     );
-    camera.position.set(5.6, 2.6, 6.4);
-    camera.lookAt(0, 0.62, 0);
+    camera.position.set(5.5, 2.45, 6.6);
+    camera.lookAt(0, 0.78, 0);
 
-    const cars = MODELS.map(({ shape }) => {
-      const car = buildCar(shape, WIRE_COLOR, WIRE_OPACITY); // ring on — parked display
-      car.traverse((child) => {
-        const mesh = child as THREE.LineSegments;
-        if (mesh.material) {
-          const m = mesh.material as THREE.Material & { opacity: number };
-          m.userData.baseOpacity = m.opacity;
-        }
-      });
-      car.position.x = OFFSCREEN_X;
-      car.visible = false;
-      scene.add(car);
+    const cars: CarModel[] = MODELS.map(({ shape, color }) => {
+      const car = buildCar(shape, { color, shadow: true, lamps: true });
+      car.group.rotation.y = Math.PI * 0.16;
+      car.group.visible = false;
+      scene.add(car.group);
       return car;
     });
 
-    const setCarOpacity = (car: THREE.Group, factor: number) => {
-      car.traverse((child) => {
-        const mesh = child as THREE.LineSegments;
-        const m = mesh.material as (THREE.Material & { opacity: number }) | undefined;
-        if (m && typeof m.userData.baseOpacity === "number") {
-          m.opacity = m.userData.baseOpacity * factor;
-        }
-      });
+    /** Resting pose — every car returns to exactly this before it holds. */
+    const settle = (car: CarModel) => {
+      car.group.position.set(0, 0, 0);
+      car.group.scale.setScalar(1);
+      setCarOpacity(car, 1);
     };
 
     let current = 0;
     let incoming = -1;
-    let swipeStart = 0;
+    let swapStart = 0;
     let lastSwap = performance.now();
-    let raf = 0;
-    let running = true;
+    let spinAngle = Math.PI * 0.16;
 
-    cars[0].visible = true;
-    cars[0].position.x = 0;
-    setCarOpacity(cars[0], 1);
+    cars[0].group.visible = true;
+    settle(cars[0]);
 
     const resize = () => {
       const w = mount.clientWidth;
@@ -107,64 +103,75 @@ export function HeroCarTurntable() {
       camera.updateProjectionMatrix();
     };
 
-    const dispose = () => {
-      scene.traverse((child) => {
-        const mesh = child as THREE.LineSegments;
-        mesh.geometry?.dispose?.();
-        const m = mesh.material as THREE.Material | undefined;
-        m?.dispose?.();
-      });
-      renderer.dispose();
-      if (renderer.domElement.parentNode === mount) {
-        mount.removeChild(renderer.domElement);
+    const beginSwap = (now: number) => {
+      incoming = (current + 1) % cars.length;
+      swapStart = now;
+      const next = cars[incoming];
+      next.group.visible = true;
+      next.group.rotation.y = spinAngle;
+      setModel(incoming);
+
+      if (reduceMotion) {
+        cars[current].group.visible = false;
+        settle(next);
+        current = incoming;
+        incoming = -1;
+        lastSwap = now;
       }
     };
 
-    const observer = new ResizeObserver(resize);
-    observer.observe(mount);
+    const runSwap = (now: number) => {
+      const p = clamp01((now - swapStart) / SWAP_MS);
+      const leaving = cars[current];
+      const arriving = cars[incoming];
+
+      // --- exit: accelerate away to the left, lift, shrink, fade out
+      const out = easeInCubic(clamp01(p / (ENTER_AT + 0.3)));
+      leaving.group.position.set(-6.4 * out, 0.42 * out, -1.5 * out);
+      leaving.group.scale.setScalar(1 - 0.26 * out);
+      setCarOpacity(leaving, 1 - Math.pow(out, 0.85));
+
+      // --- entrance: sweep in from the right and settle with a slight overshoot
+      const inT = clamp01((p - ENTER_AT) / (1 - ENTER_AT));
+      const glide = easeOutExpo(inT);
+      const pop = inT <= 0 ? 0 : easeOutBack(inT);
+      arriving.group.position.set(7.2 * (1 - glide), 0.5 * (1 - glide), -1.2 * (1 - glide));
+      arriving.group.scale.setScalar(0.82 + 0.18 * pop);
+      setCarOpacity(arriving, clamp01(Math.pow(inT, 0.55)));
+
+      // --- key light rakes across the bodywork as the new car lands
+      const sweep = Math.sin(Math.PI * p);
+      key.position.set(keyHome.x - 9 * sweep, keyHome.y, keyHome.z + 2.2 * sweep);
+      key.intensity = 2.3 + 1.5 * sweep;
+
+      if (p >= 1) {
+        leaving.group.visible = false;
+        settle(leaving);
+        settle(arriving);
+        key.position.copy(keyHome);
+        key.intensity = 2.3;
+        current = incoming;
+        incoming = -1;
+        lastSwap = now;
+      }
+    };
+
+    let raf = 0;
+    let running = true;
 
     const loop = (now: number) => {
       raf = 0;
       if (!running) return;
 
-      const spin = reduceMotion ? 0 : 0.0042;
+      if (!reduceMotion) spinAngle += SPIN;
 
-      if (incoming === -1 && now - lastSwap > HOLD_MS) {
-        incoming = (current + 1) % cars.length;
-        swipeStart = now;
-        cars[incoming].visible = true;
-        cars[incoming].position.x = reduceMotion ? 0 : OFFSCREEN_X;
-        cars[incoming].rotation.y = cars[current].rotation.y;
-        setCarOpacity(cars[incoming], reduceMotion ? 1 : 0);
-        setModel(incoming);
-
-        if (reduceMotion) {
-          cars[current].visible = false;
-          current = incoming;
-          incoming = -1;
-          lastSwap = now;
-        }
-      }
-
-      if (incoming !== -1) {
-        const t = Math.min((now - swipeStart) / SWIPE_MS, 1);
-        const e = easeOutQuint(t);
-        cars[incoming].position.x = OFFSCREEN_X * (1 - e);
-        setCarOpacity(cars[incoming], e);
-        cars[current].position.x = -OFFSCREEN_X * e;
-        setCarOpacity(cars[current], 1 - e);
-        if (t >= 1) {
-          cars[current].visible = false;
-          cars[current].position.x = OFFSCREEN_X;
-          current = incoming;
-          incoming = -1;
-          lastSwap = now;
-        }
-      }
+      if (incoming === -1 && now - lastSwap > HOLD_MS) beginSwap(now);
+      if (incoming !== -1) runSwap(now);
 
       cars.forEach((car, i) => {
-        if (!car.visible) return;
-        if (i === current || i === incoming) car.rotation.y += spin;
+        if (car.group.visible && (i === current || i === incoming)) {
+          car.group.rotation.y = spinAngle;
+        }
       });
 
       renderer.render(scene, camera);
@@ -174,6 +181,9 @@ export function HeroCarTurntable() {
     const resume = () => {
       if (running && !raf) raf = requestAnimationFrame(loop);
     };
+
+    const sizeObserver = new ResizeObserver(resize);
+    sizeObserver.observe(mount);
 
     const visibility = new IntersectionObserver(
       ([entry]) => {
@@ -194,17 +204,23 @@ export function HeroCarTurntable() {
 
     return () => {
       if (raf) cancelAnimationFrame(raf);
-      observer.disconnect();
+      sizeObserver.disconnect();
       visibility.disconnect();
       document.removeEventListener("visibilitychange", onDocVisibility);
-      dispose();
+      cars.forEach((car) => car.dispose());
+      disposeScene(scene);
+      environment.dispose();
+      renderer.dispose();
+      if (renderer.domElement.parentNode === mount) {
+        mount.removeChild(renderer.domElement);
+      }
     };
   }, []);
 
   return (
     <div className="sm-hero__turntable" aria-hidden="true">
       <div ref={mountRef} style={{ width: "100%", height: "100%" }} />
-      <span className="sm-hero__turntable-label">
+      <span className="sm-hero__turntable-label" key={model}>
         <span className="sm-hero__turntable-dot" />
         {MODELS[model].label}
         <span className="sm-hero__turntable-count">

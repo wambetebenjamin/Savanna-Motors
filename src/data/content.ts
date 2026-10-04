@@ -171,7 +171,7 @@ export const POSTS: BlogPost[] = [
     category: "Buying Guide",
     date: "2026-09-14",
     readMinutes: 7,
-    photo: "showroomRow",
+    photo: "extWhiteTruckLot",
     author: "Savanna Motors Sales Desk",
   },
   {
@@ -182,7 +182,7 @@ export const POSTS: BlogPost[] = [
     category: "Maintenance",
     date: "2026-08-30",
     readMinutes: 6,
-    photo: "intBrakeRim",
+    photo: "extRedCobble",
     author: "Savanna Motors Service Centre",
   },
   {
@@ -193,7 +193,7 @@ export const POSTS: BlogPost[] = [
     category: "Financing",
     date: "2026-08-12",
     readMinutes: 8,
-    photo: "intLuxuryDash",
+    photo: "extSilverPergola",
     author: "Savanna Motors Finance Desk",
   },
 ];

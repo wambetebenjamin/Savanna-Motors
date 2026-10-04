@@ -107,12 +107,27 @@ to instant fades: no stagger, no digit flip, no 3D rotation.
 
 ### WebGL hero
 
-`src/components/HeroCars3D.tsx` renders procedurally-built low-poly car silhouettes
-(`src/lib/three/carMeshes.ts`) as wire-frame outlines only, in `#D81324` at 0.2 opacity, on
-the right of the hero. One car rotates slowly on its Y axis; after about six seconds the
-next car swipes in from the right and takes over the rotation. DPR is capped at 1.5, the
-render loop pauses whenever the canvas leaves the viewport or the tab is hidden, and the
-whole layer is hidden below 1024px.
+Two canvases, both built from `src/lib/three/carMeshes.ts` — fully shaded procedural cars
+(solid bodywork with cut wheel arches, tinted glass, chrome beltline, alloy wheels, lit
+lamps and a contact shadow) at the real length/height/wheel proportions of the vehicles the
+showroom sells. No model files are downloaded. `src/lib/three/stage.ts` provides the shared
+tone-mapped renderer, the pre-filtered `RoomEnvironment` that makes paint and chrome read as
+metal, and a three-point rig with a brand-red rim light.
+
+`HeroCars3D.tsx` is the full-bleed layer: two opposing lanes of traffic behind the hero
+photographs, with perspective depth, edge fades, rolling wheels and a road bob. Lane heights
+are solved against the camera so the cars land in the band the photo mask clears — they read
+as driving on a road beneath the picture. DPR capped at 1.25.
+
+`HeroCarTurntable.tsx` is the corner showcase: one car turning on its axis, swapping every
+5.2s. The outgoing car accelerates away to the left, lifting, shrinking and fading, while
+the next sweeps in from the right on an `easeOutExpo` glide and settles with a slight
+`easeOutBack` overshoot; the key light rakes across the bodywork as it lands. DPR capped at
+1.75.
+
+Both loops pause whenever the canvas leaves the viewport or the tab is hidden, both bail out
+entirely below 1025px (the holders are also `display: none` there), and both fall back to a
+static frame under `prefers-reduced-motion`.
 
 ## 5. Deployment
 
