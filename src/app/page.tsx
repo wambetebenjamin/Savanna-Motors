@@ -179,8 +179,8 @@ export default function HomePage() {
                 }}
               >
                 <Photo
-                  name="coupleDealership"
-                  alt="A couple discussing a car purchase with a salesperson"
+                  name="intWheelDash"
+                  alt="Polished steering wheel and dashboard of a car ready for valuation"
                   sizes="(max-width: 1024px) 100vw, 45vw"
                 />
               </div>
