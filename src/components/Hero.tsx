@@ -1,10 +1,11 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BadgeCheck, MapPin, ShieldCheck } from "lucide-react";
 import { Photo } from "@/components/Photo";
 import { HeroSearch } from "@/components/HeroSearch";
+import type { PhotoKey } from "@/data/generated/photos";
 
 const HeroCars3D = dynamic(
   () => import("@/components/HeroCars3D").then((m) => m.HeroCars3D),
@@ -12,11 +13,47 @@ const HeroCars3D = dynamic(
 );
 
 const HEADLINE = "Find Your Perfect Drive.";
+const SLIDE_MS = 6800; // time each hero photograph stays before crossfading
+
+/**
+ * Hero photographs that crossfade one into the next. The 3D traffic layer
+ * renders behind them (see HeroCars3D) and reads through the translucent,
+ * bottom-masked stack.
+ */
+const SLIDES: { name: PhotoKey; alt: string }[] = [
+  {
+    name: "heroNairobiStreet",
+    alt: "Traffic on a Nairobi street with the city skyline behind",
+  },
+  {
+    name: "heroNairobiDusk",
+    alt: "Nairobi traffic moving along a city street at dusk",
+  },
+  {
+    name: "heroNairobiAerial",
+    alt: "Aerial view of Nairobi traffic and roadside businesses",
+  },
+  {
+    name: "heroHighwayDrive",
+    alt: "A white luxury car cruising along the open highway",
+  },
+];
 
 export function Hero() {
   const mediaRef = useRef<HTMLDivElement | null>(null);
+  const [slide, setSlide] = useState(0);
 
-  // Parallax on the hero photograph at 0.2 scroll speed.
+  // Crossfade between the hero photographs.
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const id = window.setInterval(
+      () => setSlide((s) => (s + 1) % SLIDES.length),
+      SLIDE_MS,
+    );
+    return () => window.clearInterval(id);
+  }, []);
+
+  // Parallax on the whole backdrop (3D cars + photographs) at 0.2 scroll speed.
   useEffect(() => {
     const node = mediaRef.current;
     if (!node) return;
@@ -42,12 +79,20 @@ export function Hero() {
   return (
     <section className="sm-hero" aria-labelledby="hero-title">
       <div className="sm-hero__media" ref={mediaRef}>
-        <Photo
-          name="heroNairobiStreet"
-          alt="Traffic on a Nairobi street with the city skyline behind"
-          sizes="100vw"
-          priority
-        />
+        {/* 3D cars driving across, behind the transitioning photographs */}
+        <HeroCars3D />
+        <div className="sm-hero__slides">
+          {SLIDES.map((s, i) => (
+            <div
+              key={s.name}
+              className="sm-hero__slide"
+              style={{ opacity: i === slide ? 1 : 0 }}
+              aria-hidden={i !== slide}
+            >
+              <Photo name={s.name} alt={s.alt} sizes="100vw" priority={i === 0} />
+            </div>
+          ))}
+        </div>
       </div>
       <div className="sm-hero__scrim" />
 
@@ -88,8 +133,6 @@ export function Hero() {
                 </span>
               </div>
             </div>
-
-            <HeroCars3D />
           </div>
 
           <HeroSearch />

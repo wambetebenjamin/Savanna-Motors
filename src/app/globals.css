@@ -773,27 +773,34 @@ button {
   color: var(--sm-primary);
 }
 
-/* three.js canvas holder — right side of hero, desktop only */
-.sm-hero__canvas {
-  position: relative;
-  height: clamp(320px, 46vh, 520px);
+/* three.js traffic layer — full bleed, behind the transitioning photographs */
+.sm-hero__cars3d {
+  position: absolute;
+  inset: 0;
 }
 
-.sm-hero__canvas canvas {
+.sm-hero__cars3d canvas {
   width: 100% !important;
   height: 100% !important;
   display: block;
 }
 
-.sm-hero__canvas-label {
+/* crossfading hero photographs, stacked above the 3D cars. Slightly
+   translucent and masked toward the base so the wire-frame traffic reads
+   through the images. */
+.sm-hero__slides {
   position: absolute;
-  bottom: 0;
-  right: 0;
-  font-size: var(--sm-fs-meta);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--sm-white);
-  opacity: 0.45;
+  inset: 0;
+  z-index: 1;
+  opacity: 0.88;
+  -webkit-mask-image: linear-gradient(180deg, #000 46%, rgba(0, 0, 0, 0.6) 68%, transparent 96%);
+  mask-image: linear-gradient(180deg, #000 46%, rgba(0, 0, 0, 0.6) 68%, transparent 96%);
+}
+
+.sm-hero__slide {
+  position: absolute;
+  inset: 0;
+  transition: opacity 1.5s var(--sm-ease-hero);
 }
 
 /* Inline hero search bar */
@@ -2093,7 +2100,7 @@ button {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .sm-hero__canvas {
+  .sm-hero__cars3d {
     display: none;
   }
 

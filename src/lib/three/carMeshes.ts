@@ -66,14 +66,19 @@ function wireMaterial(color: THREE.ColorRepresentation, opacity: number) {
 function wheel(radius: number, width: number, material: THREE.Material) {
   const geometry = new THREE.CylinderGeometry(radius, radius, width, 10, 1, true);
   geometry.rotateX(Math.PI / 2);
-  return new THREE.LineSegments(new THREE.EdgesGeometry(geometry, 1), material);
+  const mesh = new THREE.LineSegments(new THREE.EdgesGeometry(geometry, 1), material);
+  mesh.userData.kind = "wheel";
+  mesh.userData.radius = radius;
+  return mesh;
 }
 
 export function buildCar(
   shape: CarShape,
   color: THREE.ColorRepresentation,
   opacity = 0.2,
+  opts: { includeRing?: boolean } = {},
 ): THREE.Group {
+  const { includeRing = true } = opts;
   const group = new THREE.Group();
   const material = wireMaterial(color, opacity);
 
@@ -115,21 +120,19 @@ export function buildCar(
     });
   });
 
-  // --- ground reference line (a single flat ring, no decorative shapes)
-  const ring = new THREE.RingGeometry(2.6, 2.62, 48);
-  ring.rotateX(-Math.PI / 2);
-  const ringMesh = new THREE.LineSegments(
-    new THREE.EdgesGeometry(ring, 1),
-    wireMaterial(color, opacity * 0.6),
-  );
-  group.add(ringMesh);
+  // --- ground reference line (a single flat ring, no decorative shapes).
+  // Skipped for cars that drive across the scene — only makes sense parked.
+  if (includeRing) {
+    const ring = new THREE.RingGeometry(2.6, 2.62, 48);
+    ring.rotateX(-Math.PI / 2);
+    const ringMesh = new THREE.LineSegments(
+      new THREE.EdgesGeometry(ring, 1),
+      wireMaterial(color, opacity * 0.6),
+    );
+    group.add(ringMesh);
+  }
 
   group.rotation.y = Math.PI * 0.12;
   return group;
 }
 
-export const CAR_SEQUENCE: { shape: CarShape; label: string }[] = [
-  { shape: "suv", label: "Land Cruiser Prado" },
-  { shape: "sedan", label: "Mercedes-Benz C200" },
-  { shape: "pickup", label: "Toyota Hilux" },
-];
