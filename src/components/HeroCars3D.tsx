@@ -2,41 +2,53 @@
 
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { buildCar, type CarShape } from "@/lib/three/carMeshes";
+import { buildCar, setCarOpacity, type CarModel, type CarShape } from "@/lib/three/carMeshes";
+import {
+  addLighting,
+  createEnvironment,
+  createRenderer,
+  disposeScene,
+} from "@/lib/three/stage";
 
-const WIRE_COLOR = "#D81324"; // --sm-primary, taken from the design source
 const FOV = 32;
-const EDGE_FADE = 2.4; // world units over which a car fades in/out at the edges
+const EDGE_FADE = 3.2; // world units over which a car fades in / out at the edges
+
+/* Camera looking slightly down the road. Lane heights below are solved against
+   this framing so the near lane lands around 85% of the hero height and the far
+   lane around 76% — i.e. inside the band the photograph mask clears, which is
+   what makes the cars read as driving on a road beneath the picture rather than
+   floating over it. Move the camera and both lane heights need re-solving. */
+const CAMERA = { y: 2.4, z: 13 };
+const LOOK_AT_Y = 0.4;
 
 type Lane = {
-  /** depth — closer to the camera reads lower/larger on screen */
+  /** depth — nearer the camera reads lower and larger on screen */
   z: number;
+  /** ground height for this lane, solved against the framing above */
   y: number;
   scale: number;
   /** travel direction: -1 = right → left, 1 = left → right */
   dir: -1 | 1;
-  baseOpacity: number;
+  opacity: number;
   speed: [min: number, max: number];
-  bob: number;
   count: number;
 };
 
-// Kenyan left-hand traffic read from the hero: the near (lower) lane travels
-// right → left, the far lane travels left → right (dual carriageway).
+// Kenyan left-hand traffic: the near (lower) lane runs right → left, the far
+// lane runs left → right, like the carriageways of Mombasa Road.
 const LANES: Lane[] = [
-  // near: bottom third of the hero
-  { z: 4.2, y: -1.0, scale: 0.62, dir: -1, baseOpacity: 0.2, speed: [2.2, 2.9], bob: 0.016, count: 3 },
-  // far: just above it, smaller and fainter for depth
-  { z: -3.2, y: -0.12, scale: 0.38, dir: 1, baseOpacity: 0.11, speed: [1.2, 1.7], bob: 0.008, count: 3 },
+  { z: 4.2, y: -0.86, scale: 0.64, dir: -1, opacity: 0.66, speed: [2.4, 3.1], count: 3 },
+  { z: -3.2, y: -2.5, scale: 0.44, dir: 1, opacity: 0.34, speed: [1.3, 1.9], count: 3 },
 ];
 
 const SHAPES: CarShape[] = ["suv", "sedan", "pickup", "coupe", "hatchback"];
 
+/** Muted, road-at-dusk bodywork so the traffic never competes with the photo. */
+const PAINT = ["#20283a", "#5d6472", "#8f98a6", "#2d3440", "#7a1420", "#3c4452"];
+
 type Vehicle = {
-  group: THREE.Group;
+  car: CarModel;
   lane: Lane;
-  materials: THREE.Material[];
-  wheels: { mesh: THREE.Object3D; radius: number }[];
   x: number;
   speed: number;
   bobPhase: number;
@@ -45,14 +57,13 @@ type Vehicle = {
 const rand = (min: number, max: number) => min + Math.random() * (max - min);
 
 /**
- * Full-bleed hero WebGL layer, rendered behind the transitioning hero
- * photographs. Wire-frame car silhouettes drive continuously across the hero
- * in two opposing lanes, with perspective depth, edge fade-in/out, rolling
- * wheels and a subtle road bob.
+ * Full-bleed hero WebGL layer behind the photographs. Fully shaded cars drive
+ * continuously across the hero in two opposing lanes, with perspective depth,
+ * edge fade-in/out, rolling wheels, lit lamps and a subtle road bob.
  *
  * Desktop only (no WebGL init under 1025px — CSS also hides the holder), DPR
- * capped at 1.5, and the loop pauses when the hero scrolls out of view or the
- * tab hides. With reduced-motion a single static frame is drawn.
+ * capped, and the loop pauses when the hero scrolls out of view or the tab
+ * hides. Under reduced motion a single static frame is drawn.
  */
 export function HeroCars3D() {
   const mountRef = useRef<HTMLDivElement | null>(null);
@@ -61,92 +72,62 @@ export function HeroCars3D() {
     const mount = mountRef.current;
     if (!mount || typeof window === "undefined") return;
 
-    // Keep phones/tablets light — the canvas is hidden below 1025px in CSS.
+    // Keep phones and tablets light — the canvas is hidden below 1025px in CSS.
     if (!window.matchMedia("(min-width: 1025px)").matches) return;
 
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    let renderer: THREE.WebGLRenderer;
-    try {
-      renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    } catch {
-      return; // no WebGL — the hero simply renders without the canvas
-    }
-
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
-    renderer.setSize(mount.clientWidth, mount.clientHeight, false);
-    mount.appendChild(renderer.domElement);
+    const renderer = createRenderer(mount, 1.25); // full-bleed canvas, keep the fill rate down
+    if (!renderer) return;
 
     const scene = new THREE.Scene();
+    const environment = createEnvironment(renderer);
+    scene.environment = environment.texture;
+    addLighting(scene, 0.85);
+
     const camera = new THREE.PerspectiveCamera(
       FOV,
       Math.max(mount.clientWidth / Math.max(mount.clientHeight, 1), 0.1),
       0.1,
       100,
     );
-    camera.position.set(0, 2.4, 13);
-    camera.lookAt(0, 0.4, 0);
+    camera.position.set(0, CAMERA.y, CAMERA.z);
+    camera.lookAt(0, LOOK_AT_Y, 0);
 
-    // World-space half-width of the view at a given depth — used so cars fade
-    // in just off-screen and fully exit before wrapping.
-    const halfWidthAt = (laneZ: number) => {
-      const dist = camera.position.z - laneZ;
-      return Math.tan(THREE.MathUtils.degToRad(FOV / 2)) * dist * camera.aspect;
-    };
+    // World-space half-width of the view at a given depth, so cars fade in
+    // just off-screen and fully exit before they wrap around.
+    const halfWidthAt = (laneZ: number) =>
+      Math.tan(THREE.MathUtils.degToRad(FOV / 2)) * (camera.position.z - laneZ) * camera.aspect;
 
     const vehicles: Vehicle[] = [];
+    let paintIndex = 0;
+
     LANES.forEach((lane) => {
       for (let i = 0; i < lane.count; i += 1) {
-        const group = buildCar(SHAPES[i % SHAPES.length], WIRE_COLOR, lane.baseOpacity, {
-          includeRing: false,
+        const car = buildCar(SHAPES[(i + lane.count) % SHAPES.length], {
+          color: PAINT[paintIndex++ % PAINT.length],
+          shadow: false, // nothing to cast onto — the backdrop is the photograph
+          lamps: true,
         });
-        group.rotation.y = lane.dir === 1 ? 0 : Math.PI; // face travel direction
-        group.scale.setScalar(lane.scale);
-        group.position.y = lane.y;
-
-        const materials: THREE.Material[] = [];
-        const wheels: { mesh: THREE.Object3D; radius: number }[] = [];
-        group.traverse((child) => {
-          const mesh = child as THREE.LineSegments;
-          if (mesh.material && !materials.includes(mesh.material as THREE.Material)) {
-            materials.push(mesh.material as THREE.Material);
-          }
-          if (mesh.userData.kind === "wheel") {
-            wheels.push({ mesh, radius: mesh.userData.radius as number });
-          }
-        });
+        car.group.rotation.y = lane.dir === 1 ? 0 : Math.PI; // face travel direction
+        car.group.scale.setScalar(lane.scale);
+        car.group.position.set(0, lane.y, lane.z);
+        setCarOpacity(car, lane.opacity);
+        scene.add(car.group);
 
         // Stratified spawn so cars never start clustered.
         const offX = halfWidthAt(lane.z) + 6;
-        const x =
-          lane.dir * -offX +
-          lane.dir * 2 * offX * ((i + rand(0.1, 0.9)) / lane.count);
+        const x = lane.dir * -offX + lane.dir * 2 * offX * ((i + rand(0.1, 0.9)) / lane.count);
 
-        scene.add(group);
         vehicles.push({
-          group,
+          car,
           lane,
-          materials,
-          wheels,
           x,
           speed: rand(lane.speed[0], lane.speed[1]),
           bobPhase: Math.random() * Math.PI * 2,
         });
       }
     });
-
-    const dispose = () => {
-      scene.traverse((child) => {
-        const mesh = child as THREE.LineSegments;
-        mesh.geometry?.dispose?.();
-        const m = mesh.material as THREE.Material | undefined;
-        m?.dispose?.();
-      });
-      renderer.dispose();
-      if (renderer.domElement.parentNode === mount) {
-        mount.removeChild(renderer.domElement);
-      }
-    };
 
     const resize = () => {
       const w = mount.clientWidth;
@@ -157,41 +138,49 @@ export function HeroCars3D() {
       camera.updateProjectionMatrix();
     };
 
-    const observer = new ResizeObserver(resize);
-    observer.observe(mount);
-
     const frame = (now: number, last: number) => {
-      const dt = Math.min((now - last) / 1000, 0.1); // clamp after tab sleeps
+      const dt = Math.min((now - last) / 1000, 0.1); // clamp after the tab sleeps
+
       vehicles.forEach((v) => {
         const offX = halfWidthAt(v.lane.z) + 3;
         v.x += v.lane.dir * v.speed * dt;
         if (v.x > offX) v.x -= offX * 2;
         if (v.x < -offX) v.x += offX * 2;
 
-        v.group.position.x = v.x;
-        v.group.position.y =
-          v.lane.y + Math.sin(now * 0.002 + v.bobPhase) * v.lane.bob;
+        v.car.group.position.x = v.x;
+        v.car.group.position.y = v.lane.y + Math.sin(now * 0.002 + v.bobPhase) * 0.014;
 
-        // Fade in/out across the screen edges so cars never pop.
+        // Fade across the screen edges so cars never pop in or out.
         const edge = offX - Math.abs(v.x);
-        const f = THREE.MathUtils.clamp(edge / EDGE_FADE, 0, 1);
-        v.materials.forEach((m) => {
-          (m as THREE.Material & { opacity: number }).opacity = v.lane.baseOpacity * f;
-        });
+        setCarOpacity(v.car, v.lane.opacity * THREE.MathUtils.clamp(edge / EDGE_FADE, 0, 1));
 
         // Angular speed from ground speed, corrected for the group's scale.
-        v.wheels.forEach(({ mesh, radius }) => {
-          mesh.rotation.z -= (v.speed * dt) / (radius * v.lane.scale);
+        v.car.wheels.forEach((wheel) => {
+          wheel.rotation.z -= (v.speed * dt) / (v.car.wheelRadius * v.lane.scale);
         });
       });
+
       renderer.render(scene, camera);
     };
 
+    const sizeObserver = new ResizeObserver(resize);
+    sizeObserver.observe(mount);
+
+    const teardown = () => {
+      sizeObserver.disconnect();
+      vehicles.forEach((v) => v.car.dispose());
+      disposeScene(scene);
+      environment.dispose();
+      renderer.dispose();
+      if (renderer.domElement.parentNode === mount) {
+        mount.removeChild(renderer.domElement);
+      }
+    };
+
     if (reduceMotion) {
-      // Static frame: cars parked mid-road, no motion.
+      // Static frame: cars standing in the lanes, no motion.
       vehicles.forEach((v, i) => {
-        v.group.position.x = (i % 3) * 4 - 4;
-        v.group.position.y = v.lane.y;
+        v.car.group.position.x = (i % 3) * 5 - 5;
       });
       resize();
       renderer.render(scene, camera);
@@ -199,12 +188,11 @@ export function HeroCars3D() {
         resize();
         renderer.render(scene, camera);
       };
-      const ro = new ResizeObserver(still);
-      ro.observe(mount);
+      const stillObserver = new ResizeObserver(still);
+      stillObserver.observe(mount);
       return () => {
-        ro.disconnect();
-        observer.disconnect();
-        dispose();
+        stillObserver.disconnect();
+        teardown();
       };
     }
 
@@ -245,13 +233,11 @@ export function HeroCars3D() {
 
     raf = requestAnimationFrame(loop);
 
-
     return () => {
       if (raf) cancelAnimationFrame(raf);
-      observer.disconnect();
       visibility.disconnect();
       document.removeEventListener("visibilitychange", onDocVisibility);
-      dispose();
+      teardown();
     };
   }, []);
 

@@ -26,8 +26,11 @@ export function Testimonials() {
             data-active={index === active}
             aria-hidden={index !== active}
           >
-            <div className="sm-testimonial__avatar">
-              <Photo name={t.photo} alt={`${t.name}, Savanna Motors customer`} sizes="96px" />
+            {/* Cars only — the thumbnail is the model that was bought, not a
+                portrait of the reviewer. It is decorative: the same vehicle is
+                named in the figcaption below, so screen readers skip it. */}
+            <div className="sm-testimonial__vehicle" aria-hidden="true">
+              <Photo name={t.carPhoto} alt="" sizes="(max-width: 768px) 100vw, 180px" />
             </div>
             <div>
               <div

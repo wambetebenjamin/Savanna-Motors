@@ -695,17 +695,29 @@ button {
   object-fit: cover;
 }
 
+/* Legibility scrim. Weighted to the left, where the headline sits, and lifted
+   off the right half so the photograph stays clearly readable. The horizontal
+   and vertical ramps multiply, so keep both light — the previous flat 0.7 base
+   layer on top of a 0.9 ramp was darkening the photographs by ~96%. */
 .sm-hero__scrim {
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: linear-gradient(
+  background:
+    linear-gradient(
       90deg,
-      var(--sm-overlay-90) 0%,
-      var(--sm-overlay-70) 55%,
-      rgba(0, 0, 0, 0.45) 100%
+      rgba(8, 8, 10, 0.8) 0%,
+      rgba(8, 8, 10, 0.62) 30%,
+      rgba(8, 8, 10, 0.28) 62%,
+      rgba(8, 8, 10, 0.1) 100%
     ),
-    var(--sm-overlay-70);
+    linear-gradient(
+      180deg,
+      rgba(8, 8, 10, 0.56) 0%,
+      rgba(8, 8, 10, 0.04) 26%,
+      rgba(8, 8, 10, 0.06) 58%,
+      rgba(8, 8, 10, 0.54) 100%
+    );
 }
 
 .sm-hero__inner {
@@ -731,6 +743,15 @@ button {
   font-size: clamp(2.4rem, 1.4rem + 4.2vw, 4.75rem);
   margin-bottom: var(--sm-space-4);
   text-wrap: balance;
+  text-shadow: 0 2px 22px rgba(0, 0, 0, 0.55);
+}
+
+/* The scrim is deliberately light so the photographs show through, so the copy
+   carries its own shadow rather than relying on a blanket overlay. */
+.sm-hero__eyebrow,
+.sm-hero__sub,
+.sm-hero__trust {
+  text-shadow: 0 1px 14px rgba(0, 0, 0, 0.6);
 }
 
 .sm-hero__word {
@@ -773,7 +794,8 @@ button {
   color: var(--sm-primary);
 }
 
-/* three.js traffic layer — full bleed, behind the transitioning photographs */
+/* three.js traffic layer — full bleed, behind the transitioning photographs.
+   Fully shaded cars, so this sits in the band the photo mask clears. */
 .sm-hero__cars3d {
   position: absolute;
   inset: 0;
@@ -785,25 +807,37 @@ button {
   display: block;
 }
 
-/* crossfading hero photographs, stacked above the 3D cars. Slightly
-   translucent and masked toward the base so the wire-frame traffic reads
-   through the images. */
+/* Crossfading hero photographs. These are the hero's subject, so they run at
+   full strength — only the bottom edge is masked away, and that band is
+   exactly where the 3D traffic drives, so the cars read as being on the road
+   beneath the photograph. */
 .sm-hero__slides {
   position: absolute;
   inset: 0;
   z-index: 1;
-  opacity: 0.88;
-  -webkit-mask-image: linear-gradient(180deg, #000 46%, rgba(0, 0, 0, 0.6) 68%, transparent 96%);
-  mask-image: linear-gradient(180deg, #000 46%, rgba(0, 0, 0, 0.6) 68%, transparent 96%);
+  opacity: 1;
+  -webkit-mask-image: linear-gradient(180deg, #000 54%, rgba(0, 0, 0, 0.62) 72%, rgba(0, 0, 0, 0.15) 88%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 54%, rgba(0, 0, 0, 0.62) 72%, rgba(0, 0, 0, 0.15) 88%, transparent 100%);
 }
 
 .sm-hero__slide {
   position: absolute;
   inset: 0;
-  transition: opacity 1.5s var(--sm-ease-hero);
+  transition: opacity 1.6s var(--sm-ease-hero);
 }
 
-/* corner 3D showcase — a wire-frame model rotating on its axis, desktop only */
+/* Slow push-in on whichever slide is showing, so the photograph reads as alive
+   rather than as a flat backdrop. Paused under prefers-reduced-motion below. */
+.sm-hero__slide img {
+  transform: scale(1.07);
+  transition: transform 8.4s linear;
+}
+
+.sm-hero__slide[data-active="true"] img {
+  transform: scale(1);
+}
+
+/* corner 3D showcase — a shaded car turning on its axis, desktop only */
 .sm-hero__turntable {
   position: relative;
   align-self: end;
@@ -830,6 +864,8 @@ button {
   display: block;
 }
 
+/* Re-keyed in React on every model change, so this animation replays as each
+   new car settles on the turntable. */
 .sm-hero__turntable-label {
   position: absolute;
   right: 0;
@@ -841,7 +877,20 @@ button {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--sm-white);
-  opacity: 0.6;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.7);
+  opacity: 0.78;
+  animation: sm-turntable-label-in 0.9s var(--sm-ease-hero) both;
+}
+
+@keyframes sm-turntable-label-in {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+  to {
+    opacity: 0.78;
+    transform: none;
+  }
 }
 
 .sm-hero__turntable-dot {
@@ -1600,15 +1649,21 @@ button {
   pointer-events: auto;
 }
 
-.sm-testimonial__avatar {
-  width: 96px;
-  height: 96px;
-  border-radius: var(--sm-radius-circle);
+/* Cars only — this slot holds the vehicle that was bought, never a portrait,
+   so it is a landscape plate rather than a round avatar. `position: relative`
+   is required: next/image `fill` is absolutely positioned. */
+.sm-testimonial__vehicle {
+  position: relative;
+  width: 180px;
+  aspect-ratio: 4 / 3;
   overflow: hidden;
   flex: none;
+  background: var(--sm-light);
+  border: var(--sm-border-width) solid var(--sm-border);
+  border-radius: var(--sm-radius);
 }
 
-.sm-testimonial__avatar img {
+.sm-testimonial__vehicle img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -2284,6 +2339,12 @@ button {
     justify-items: center;
   }
 
+  .sm-testimonial__vehicle {
+    width: 100%;
+    max-width: 320px;
+    aspect-ratio: 16 / 9;
+  }
+
   .sm-footer__grid {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--sm-space-4);
@@ -2379,6 +2440,12 @@ button {
     opacity: 1;
     transform: none;
     animation-delay: 0s !important;
+  }
+
+  /* no Ken Burns push-in */
+  .sm-hero__slide img,
+  .sm-hero__slide[data-active="true"] img {
+    transform: none !important;
   }
 
   .sm-reveal {

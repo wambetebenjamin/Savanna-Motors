@@ -52,6 +52,29 @@ free **Pexels Licence** or the **Unsplash Licence**. No AI-generated car renders
 | `couple-dealership-7144172.jpg` | Couple discussing a car purchase with a salesperson | Pexels | [https://www.pexels.com/photo/7144172/](https://www.pexels.com/photo/7144172/) |
 | `service-mechanic-8986148.jpg` | Mechanic inspecting a raised car in an auto workshop | Pexels | [https://www.pexels.com/photo/8986148/](https://www.pexels.com/photo/8986148/) |
 
+## Imagery policy — cars only
+
+The homepage renders **vehicle photography exclusively**: no photograph of a person appears
+anywhere on it. That covers the hero slides, featured inventory, the trade-in section,
+customer testimonials (each thumbnail is the model that was bought, not the buyer) and the
+blog cards. `/about` follows the same rule.
+
+Listings and editorial use whole-vehicle photography too — the `int-wheel-rim-*` and
+`int-brake-rim-*` macro crops are no longer attached to any car, because a single wheel
+repeated across eighteen listings tells a buyer nothing.
+
+The `person-*`, `couple-*` and both wheel macro files below are retained in the library but
+are not referenced by any page; `service-mechanic-*` is used only on `/service`.
+
+### Hero slides, in rotation order
+
+| # | File | Serving |
+| --- | --- | --- |
+| 1 | `ext-black-suv-night-3370332.jpg` | Black SUV parked outside glowing city restaurant lights at night |
+| 2 | `hero-highway-drive-29615584.jpg` | White sports car cruising along the open highway at golden hour |
+| 3 | `showroom-row-9702325.jpg` | A row of new cars lined up inside the Savanna Motors showroom |
+| 4 | `ext-offroad4x4-12215012.jpg` | Classic 4x4 facing forward in open rocky country under a moody sky |
+
 ## Licences
 
 * Pexels Licence — https://www.pexels.com/license/ (free to use, no attribution required;
