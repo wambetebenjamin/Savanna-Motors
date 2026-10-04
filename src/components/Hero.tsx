@@ -12,6 +12,11 @@ const HeroCars3D = dynamic(
   { ssr: false },
 );
 
+const HeroCarTurntable = dynamic(
+  () => import("@/components/HeroCarTurntable").then((m) => m.HeroCarTurntable),
+  { ssr: false },
+);
+
 const HEADLINE = "Find Your Perfect Drive.";
 const SLIDE_MS = 6800; // time each hero photograph stays before crossfading
 
@@ -22,20 +27,20 @@ const SLIDE_MS = 6800; // time each hero photograph stays before crossfading
  */
 const SLIDES: { name: PhotoKey; alt: string }[] = [
   {
-    name: "heroNairobiStreet",
-    alt: "Traffic on a Nairobi street with the city skyline behind",
-  },
-  {
-    name: "heroNairobiDusk",
-    alt: "Nairobi traffic moving along a city street at dusk",
-  },
-  {
-    name: "heroNairobiAerial",
-    alt: "Aerial view of Nairobi traffic and roadside businesses",
+    name: "extBlackSuvNight",
+    alt: "Black SUV parked outside glowing city restaurant lights at night",
   },
   {
     name: "heroHighwayDrive",
-    alt: "A white luxury car cruising along the open highway",
+    alt: "White sports car cruising along the open highway at golden hour",
+  },
+  {
+    name: "showroomRow",
+    alt: "A row of new cars lined up inside the Savanna Motors showroom",
+  },
+  {
+    name: "extOffroad4x4",
+    alt: "Classic 4x4 facing forward in open rocky country under a moody sky",
   },
 ];
 
@@ -133,6 +138,9 @@ export function Hero() {
                 </span>
               </div>
             </div>
+
+            {/* corner showcase: rotating wire-frame model, switching occasionally */}
+            <HeroCarTurntable />
           </div>
 
           <HeroSearch />

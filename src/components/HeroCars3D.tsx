@@ -30,7 +30,7 @@ const LANES: Lane[] = [
   { z: -3.2, y: -0.12, scale: 0.38, dir: 1, baseOpacity: 0.11, speed: [1.2, 1.7], bob: 0.008, count: 3 },
 ];
 
-const SHAPES: CarShape[] = ["suv", "sedan", "pickup"];
+const SHAPES: CarShape[] = ["suv", "sedan", "pickup", "coupe", "hatchback"];
 
 type Vehicle = {
   group: THREE.Group;
